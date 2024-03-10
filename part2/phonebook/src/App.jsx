@@ -23,7 +23,7 @@ const App = () => {
   const [query, setQuery] = useState(persons)
 
   const [errorMessage, setErrorMessage] = useState('')
-  let errorType = false
+  const [errorType, setErrorType ] = useState(null)
 
   const addContact = (event) => {
     event.preventDefault()
@@ -34,7 +34,7 @@ const App = () => {
         contactService
           .update(person.id, changedPerson)
           .then(returnedContact => {
-            errorType = false
+            setErrorType(false)
             setErrorMessage(
               `Contact '${changedPerson.name}' updated successfully.`
             )
@@ -44,10 +44,11 @@ const App = () => {
             setPersons(persons.map(person => person.id !== returnedContact.id ? person : returnedContact))
             setQuery(persons.map(person => person.id !== returnedContact.id ? person : returnedContact))
           }).catch(error => {
-            errorType = true
-            setErrorMessage(
-              `Contact '${changedPerson.name}' was already removed from the server.`
-            )
+            setErrorType(true)
+            // setErrorMessage(
+            //   `Contact '${changedPerson.name}' was already removed from the server.`
+            // )
+            setErrorMessage(error.response.data.error)
             setTimeout(() => {
               setErrorMessage(null)
             }, 5000)
@@ -56,7 +57,7 @@ const App = () => {
           })
       }
     } else if (persons.some(person => person.number === newNumber)) {
-      errorType = true
+      setErrorType(true)
       setErrorMessage(
         `Number is already assigned to ${persons.find(person => person.number === newNumber).name}.`
       )
@@ -66,14 +67,21 @@ const App = () => {
     } else {
       const personObject = {
         name: newName,
-        number: newNumber,
-        id: (persons.length + 1).toString()
+        number: newNumber
       }
       contactService
         .create(personObject)
         .then(returnedContact => {
           setPersons(persons.concat(returnedContact))
           setQuery(persons.concat(returnedContact))
+        }).catch(error => {
+          setErrorType(true)
+          setErrorMessage(
+            error.response.data.error
+          )
+          setTimeout(() => {
+            setErrorMessage(null)
+          }, 5000)
         })
     }
     setNewName('')
@@ -86,7 +94,7 @@ const App = () => {
       contactService
         .remove(id)
         .then(() => {
-          errorType = false
+          setErrorType(false)
           setErrorMessage(
             `Contact '${contact.name}' removed successfully.`
           )
@@ -96,7 +104,7 @@ const App = () => {
           setPersons(persons.filter(person => person.id !== id))
           setQuery(persons.filter(person => person.id !== id))
         }).catch(error => {
-          errorType = true
+          setErrorType(true)
           setErrorMessage(
             `Contact '${contact.name}' was already removed from the server.`
           )
