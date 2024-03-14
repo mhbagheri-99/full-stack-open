@@ -4,35 +4,83 @@ const assert = require('node:assert');
 const mongoose = require('mongoose');
 // eslint-disable-next-line import/no-extraneous-dependencies
 const supertest = require('supertest');
+// eslint-disable-next-line import/no-extraneous-dependencies
+const bcrypt = require('bcrypt');
+const User = require('../models/user');
 const Blog = require('../models/blog');
 const helper = require('./test_helper');
 const app = require('../app');
 
 const api = supertest(app);
 
+let token = null;
+
+beforeEach(async () => {
+  await User.deleteMany({});
+
+  const newUser = new User({
+    username: 'root',
+    name: 'superuser',
+    passwordHash: await bcrypt.hash('pass', 10),
+  });
+
+  await newUser.save();
+});
+
+test('user can log in with correct credentials', async () => {
+  const userLogin = {
+    username: 'root',
+    password: 'pass',
+  };
+
+  const loginResponse = await api.post('/api/login')
+    .send(userLogin)
+    .expect(200);
+
+  token = `Bearer ${loginResponse.body.token}`;
+  assert(token);
+});
+
 describe('when there is initially some blogs saved', () => {
-  beforeEach(async () => {
+  test('inserting initial blogs', async () => {
     await Blog.deleteMany({});
-    const blogObjects = helper.initialBlogs.map((blog) => new Blog(blog));
-    const promiseArray = blogObjects.map((blog) => blog.save());
-    await Promise.all(promiseArray);
+    await api.post('/api/blogs')
+      .set('Authorization', `${token}`)
+      .send(helper.initialBlogs[0])
+      .expect(201)
+      .expect('Content-Type', /application\/json/);
+
+    await api.post('/api/blogs')
+      .set('Authorization', `${token}`)
+      .send(helper.initialBlogs[1])
+      .expect(201)
+      .expect('Content-Type', /application\/json/);
+
+    const blogs = await helper.blogsInDb();
+
+    assert.strictEqual(blogs.length, helper.initialBlogs.length);
   });
 
   test('blogs are returned as json', async () => {
     await api
       .get('/api/blogs')
+      .set('Authorization', `${token}`)
       .expect(200)
       .expect('Content-Type', /application\/json/);
   });
 
   test('there are #n (initial) blogs', async () => {
-    const response = await api.get('/api/blogs');
+    const response = await api
+      .get('/api/blogs')
+      .set('Authorization', `${token}`);
 
     assert.strictEqual(response.body.length, helper.initialBlogs.length);
   });
 
   test('one blog is about a crisis', async () => {
-    const response = await api.get('/api/blogs');
+    const response = await api
+      .get('/api/blogs')
+      .set('Authorization', `${token}`);
 
     const contents = response.body.map((e) => e.title);
     assert.strictEqual(contents.includes('Housing Crisis in the World of Medicine.'), true);
@@ -50,6 +98,7 @@ describe('adding a blog', () => {
 
     await api
       .post('/api/blogs')
+      .set('Authorization', `${token}`)
       .send(newBlog)
       .expect(201)
       .expect('Content-Type', /application\/json/);
@@ -69,6 +118,7 @@ describe('adding a blog', () => {
 
     await api
       .post('/api/blogs')
+      .set('Authorization', `${token}`)
       .send(newBlog)
       .expect(400);
 
@@ -85,6 +135,7 @@ describe('adding a blog', () => {
 
     await api
       .post('/api/blogs')
+      .set('Authorization', `${token}`)
       .send(newBlog)
       .expect(400);
 
@@ -95,7 +146,9 @@ describe('adding a blog', () => {
 
 describe('blog properties and defaults', () => {
   test('blog has an id property', async () => {
-    const response = await api.get('/api/blogs');
+    const response = await api
+      .get('/api/blogs')
+      .set('Authorization', `${token}`);
     assert.ok(response.body[0].id);
   });
 
@@ -108,6 +161,7 @@ describe('blog properties and defaults', () => {
 
     await api
       .post('/api/blogs')
+      .set('Authorization', `${token}`)
       .send(newBlog)
       .expect(201)
       .expect('Content-Type', /application\/json/);
@@ -125,6 +179,7 @@ describe('deleting a blog', () => {
 
     await api
       .delete(`/api/blogs/${blogToDelete.id}`)
+      .set('Authorization', `${token}`)
       .expect(204);
 
     const blogsAtEnd = await helper.blogsInDb();
@@ -144,6 +199,7 @@ describe('updating a blog', () => {
 
     await api
       .put(`/api/blogs/${blogToUpdate.id}`)
+      .set('Authorization', `${token}`)
       .send(updatedBlog)
       .expect(200);
 
