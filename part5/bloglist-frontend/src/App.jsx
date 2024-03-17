@@ -5,19 +5,11 @@ import LoginForm from './components/LoginForm'
 import BlogForm from './components/BlogForm'
 import blogService from './services/blogs'
 import loginService from './services/login'
-
-const initialValues = {
-  title: "",
-  author: "",
-  url: "",
-};
+import Togglable from './components/Togglable'
 
 const App = () => {
   const [blogs, setBlogs] = useState([])
-  const [newBlog, setNewBlog] = useState(initialValues)
-  // const [newBlogTitle, setNewBlogTitle] = useState('')
-  // const [newBlogAuthor, setNewBlogAuthor] = useState('')
-  // const [newBlogURL, setNewBlogURL] = useState('')
+  const [rerender, setRerender] = useState(false)
 
   const [errorMessage, setErrorMessage] = useState(null)
   // False means success, true means error
@@ -29,9 +21,9 @@ const App = () => {
 
   useEffect(() => {
     blogService.getAll().then(blogs =>
-      setBlogs( blogs )
+      setBlogs( blogs.sort ((a, b) => b.likes - a.likes))
     )  
-  }, [user, newBlog])
+  }, [user, rerender])
 
   useEffect(() => {
     const loggedUserJSON = window.localStorage.getItem('loggedBlogAppUser')
@@ -81,23 +73,45 @@ const App = () => {
     setBlogs([]) // doesn't work???
   }
 
-  const handleBlogChange = (e) => {
-    const { name, value } = e.target;
-
-    setNewBlog({
-      ...newBlog,
-      [name]: value,
-    });
-  };
-
-  const addBlog = (event) => {
-    event.preventDefault()
-    blogService.create(newBlog)
-    setErrorType(false)
+  const addBlog = (newBlog) => {
+    blogService
+    .create(newBlog)
+    .then(returnedBlog => {
+      setBlogs(blogs.concat(returnedBlog))
+      setRerender(!rerender)
+      setErrorType(false)
       setErrorMessage(`Blog "${newBlog.title}" by "${newBlog.author}" added`)
       setTimeout(() => {
         setErrorMessage(null)
       }, 5000)
+    })
+  }
+
+  const addLike = (blog) => {
+    blogService
+    .update(blog.id, blog)
+    .then(returnedBlog => {
+      setBlogs(blogs.map(b => b.id !== blog.id ? b : returnedBlog))
+      setRerender(!rerender)
+      setErrorType(false)
+      setErrorMessage(`Liked "${blog.title}" by "${blog.author}"`)
+      setTimeout(() => {
+        setErrorMessage(null)
+      }, 5000)
+    })
+  }
+
+  const removeBlog = (blog) => {
+    blogService
+    .remove(blog.id)
+    .then(() => {
+      setBlogs(blogs.filter(b => b.id !== blog.id))
+      setErrorType(false)
+      setErrorMessage(`Removed "${blog.title}" by "${blog.author}"`)
+      setTimeout(() => {
+        setErrorMessage(null)
+      }, 5000)
+    })
   }
 
   return (
@@ -111,10 +125,12 @@ const App = () => {
       <div>
         <p>{(user.name) ? user.name : user.username} logged-in 
         <button onClick={handleLogout}>Logout</button> </p>
-        <BlogForm newBlog={newBlog} handleBlogChange={handleBlogChange}
-        addBlog={addBlog}/>
+        <Togglable buttonLabel="new blog">
+          <BlogForm addBlog={addBlog}/>
+        </Togglable>
         {blogs.map(blog =>
-        <Blog key={blog.id} blog={blog} />
+        <Blog key={blog.id} blog={blog} addLike={addLike}
+        removeBlog={removeBlog}/>
       )}
       </div>
       }
