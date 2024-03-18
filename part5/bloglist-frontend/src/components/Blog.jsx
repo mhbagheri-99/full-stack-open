@@ -1,10 +1,11 @@
 /* eslint-disable react/no-unescaped-entities */
 import { useState } from 'react'
 
-const Blog = ({ blog, addLike, removeBlog }, refs) => {
+const Blog = ({ blog, currentUser, addLike, removeBlog }, refs) => {
   const [visible, setVisible] = useState(false)
 
-  const authorized = (blog.userID.username === JSON.parse(window.localStorage.getItem('loggedBlogAppUser')).username)
+  // const authorized = (blog.userID.username === JSON.parse(window.localStorage.getItem('loggedBlogAppUser')).username)
+  const authorized = (blog.userID.username === currentUser.username)
   const showDeleteButton = { display: authorized ? '' : 'none' }
 
   const blogStyle = {
@@ -33,24 +34,24 @@ const Blog = ({ blog, addLike, removeBlog }, refs) => {
   }
 
   return (
-    <div style={blogStyle}>
+    <div style={blogStyle} className='blog'>
       {visible ?
         <div>
-          <p>
+          <p className='title'>
               Title: "{blog.title}"
             <button onClick={toggleVisibility}>
                 Show Less
             </button>
           </p>
-          <p>Author: "{blog.author}"</p>
-          <p>
+          <p className='author'>Author: "{blog.author}"</p>
+          <p className='likes'>
               Likes: {blog.likes}
             <button onClick={likeBlog}>
                 like
             </button>
           </p>
-          <p>URL: "{blog.url}"</p>
-          <p>
+          <p className='url'>URL: "{blog.url}"</p>
+          <p className='user'>
               Added by: "{blog.userID.name ?
               blog.userID.name : blog.userID.username}"
           </p>
@@ -61,12 +62,13 @@ const Blog = ({ blog, addLike, removeBlog }, refs) => {
         </div>
         :
         <div>
-          <p>
+          <p className='title'>
               Title: "{blog.title}"
             <button onClick={toggleVisibility}>
                 Show More
             </button>
           </p>
+          <p className='author'>Author: "{blog.author}"</p>
         </div>
       }
     </div>
