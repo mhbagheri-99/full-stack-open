@@ -34,7 +34,7 @@ const Blog = ({ blog, currentUser, addLike, removeBlog }, refs) => {
   }
 
   return (
-    <div style={blogStyle} className='blog'>
+    <div style={blogStyle} className='blog' data-testid='blog'>
       {visible ?
         <div>
           <p className='title'>
