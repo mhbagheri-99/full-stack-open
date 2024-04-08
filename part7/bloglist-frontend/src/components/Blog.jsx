@@ -21,11 +21,7 @@ const Blog = ({ blog, currentUser, addLike, removeBlog }, refs) => {
   };
 
   const likeBlog = () => {
-    const updatedBlog = {
-      ...blog,
-      likes: blog.likes + 1,
-    };
-    addLike(updatedBlog);
+    addLike(blog);
   };
 
   const confirmRemove = () => {

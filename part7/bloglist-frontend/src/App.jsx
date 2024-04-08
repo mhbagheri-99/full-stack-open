@@ -9,31 +9,32 @@ import Togglable from "./components/Togglable";
 
 import { useSelector, useDispatch } from "react-redux";
 import { notify } from "./reducers/notificationReducer";
+import { initializeBlogs, createBlog, removeBlog, likeBlog, resetBlogs } from "./reducers/blogReducer";
+import { initializeUsers, setCurrentUserAction } from "./reducers/userReducer";
 
 const App = () => {
-  const [blogs, setBlogs] = useState([]);
+  const blogs = useSelector((state) => state.blogs);
   const [rerender, setRerender] = useState(false);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [user, setUser] = useState(null);
+  const { users, currentUser } = useSelector((state) => state.users);
 
   const blogFormRef = useRef();
   const dispatch = useDispatch();
 
   // check the expired token case as well
   useEffect(() => {
-    if (user)
-      blogService
-        .getAll()
-        .then((blogs) => setBlogs(blogs.sort((a, b) => b.likes - a.likes)));
-  }, [user, rerender]);
+    if (currentUser)
+      dispatch(initializeBlogs());
+  }, [currentUser, rerender, dispatch]);
 
   useEffect(() => {
     const loggedUserJSON = window.localStorage.getItem("loggedBlogAppUser");
     if (loggedUserJSON) {
       const user = JSON.parse(loggedUserJSON);
-      setUser(user);
+      dispatch(setCurrentUserAction(user));
+      dispatch(initializeUsers());
       blogService.setToken(user.token);
     }
   }, []);
@@ -48,7 +49,7 @@ const App = () => {
       });
       window.localStorage.setItem("loggedBlogAppUser", JSON.stringify(user));
       blogService.setToken(user.token);
-      setUser(user);
+      dispatch(setCurrentUserAction(user));
       dispatch(notify({
         message: `Welcome ${user.name ? user.name : user.username}!`,
         type: "success",
@@ -66,51 +67,50 @@ const App = () => {
   const handleLogout = () => {
     window.localStorage.removeItem("loggedBlogAppUser");
     dispatch(notify({
-      message: `${user.name ? user.name : user.username} successfully logged out!`,
+      message: `${currentUser.name ? currentUser.name : currentUser.username} successfully logged out!`,
       type: "success",
     }, 5));
-    setUser(null);
-    setBlogs([]); // doesn't work???
+    dispatch(setCurrentUserAction(null));
+    dispatch(resetBlogs());
   };
 
-  const addBlog = (newBlog) => {
+  const addBlog = (blog) => {
     blogFormRef.current.toggleVisibility();
-    blogService.create(newBlog).then((returnedBlog) => {
-      setBlogs(blogs.concat(returnedBlog));
-      setRerender(!rerender);
-      dispatch(notify({
-        message: `Blog "${newBlog.title}" by "${newBlog.author}" added`,
-        type: "success",
-      }, 5));
-    });
+    const newBlog = {
+      ...blog,
+      likes: 0,
+      userID: currentUser.id,
+    };
+    dispatch(createBlog(newBlog));
+    setRerender(!rerender);
+    dispatch(notify({
+      message: `Blog "${newBlog.title}" by "${newBlog.author}" added`,
+      type: "success",
+    }, 5));
   };
 
-  const addLike = (blog) => {
-    blogService.update(blog.id, blog).then((returnedBlog) => {
-      setBlogs(blogs.map((b) => (b.id !== blog.id ? b : returnedBlog)));
-      setRerender(!rerender);
-      dispatch(notify({
-        message: `Liked "${blog.title}" by "${blog.author}"`,
-        type: "success",
-      }, 5));
-    });
+  const addLike = (likedBlog) => {
+    dispatch(likeBlog(likedBlog.id));
+    setRerender(!rerender);
+    dispatch(notify({
+      message: `Liked "${likedBlog.title}" by "${likedBlog.author}"`,
+      type: "success",
+    }, 5));
   };
 
-  const removeBlog = (blog) => {
-    blogService.remove(blog.id).then(() => {
-      setBlogs(blogs.filter((b) => b.id !== blog.id));
-      dispatch(notify({
-        message: `Removed "${blog.title}" by "${blog.author}"`,
-        type: "success",
-      }, 5));
-    });
+  const deleteBlog = (blog) => {
+    dispatch(removeBlog(blog.id));
+    dispatch(notify({
+      message: `Removed "${blog.title}" by "${blog.author}"`,
+      type: "success",
+    }, 5));
   };
 
   return (
     <div>
       <h2>blogs</h2>
       <Notification />
-      {user === null ? (
+      {currentUser === null ? (
         <LoginForm
           handleLogin={handleLogin}
           username={username}
@@ -121,7 +121,7 @@ const App = () => {
       ) : (
         <div>
           <p>
-            {user.name ? user.name : user.username} logged-in
+            {currentUser.name ? currentUser.name : currentUser.username} logged-in
             <button onClick={handleLogout}>Logout</button>{" "}
           </p>
           <Togglable buttonLabel="new blog" ref={blogFormRef}>
@@ -131,9 +131,9 @@ const App = () => {
             <Blog
               key={blog.id}
               blog={blog}
-              currentUser={user}
+              currentUser={currentUser}
               addLike={addLike}
-              removeBlog={removeBlog}
+              removeBlog={deleteBlog}
             />
           ))}
         </div>

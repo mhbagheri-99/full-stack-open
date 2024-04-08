@@ -103,7 +103,7 @@ test("expands blog and shows its #likes and url", async () => {
   expect(likes).toHaveTextContent("Likes: 10");
 
   const url = container.querySelector(".url");
-  expect(url).toHaveTextContent('URL: "www.test.com"');
+  expect(url).toHaveTextContent("URL: \"www.test.com\"");
 });
 
 test("expands blog and likes it twice", async () => {
