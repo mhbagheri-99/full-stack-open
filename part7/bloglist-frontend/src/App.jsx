@@ -1,5 +1,12 @@
 import { useState, useEffect, useRef } from "react";
+import {
+  BrowserRouter as Router,
+  Routes, Route, Link,
+  useParams
+} from "react-router-dom";
+
 import Blog from "./components/Blog";
+import Blogs from "./components/Blogs";
 import Notification from "./components/Notification";
 import LoginForm from "./components/LoginForm";
 import BlogForm from "./components/BlogForm";
@@ -13,7 +20,7 @@ import { initializeBlogs, createBlog, removeBlog, likeBlog, resetBlogs } from ".
 import { initializeUsers, setCurrentUserAction } from "./reducers/userReducer";
 
 const App = () => {
-  const blogs = useSelector((state) => state.blogs);
+  // const blogs = useSelector((state) => state.blogs);
   const [rerender, setRerender] = useState(false);
 
   const [username, setUsername] = useState("");
@@ -106,39 +113,101 @@ const App = () => {
     }, 5));
   };
 
-  return (
+  const padding = {
+    padding: 5
+  };
+
+  const Home = () => (
     <div>
-      <h2>blogs</h2>
-      <Notification />
-      {currentUser === null ? (
-        <LoginForm
-          handleLogin={handleLogin}
-          username={username}
-          setUsername={setUsername}
-          password={password}
-          setPassword={setPassword}
-        />
-      ) : (
-        <div>
-          <p>
-            {currentUser.name ? currentUser.name : currentUser.username} logged-in
-            <button onClick={handleLogout}>Logout</button>{" "}
-          </p>
-          <Togglable buttonLabel="new blog" ref={blogFormRef}>
-            <BlogForm addBlog={addBlog} />
-          </Togglable>
-          {blogs.map((blog) => (
-            <Blog
-              key={blog.id}
-              blog={blog}
-              currentUser={currentUser}
-              addLike={addLike}
-              removeBlog={deleteBlog}
-            />
-          ))}
-        </div>
-      )}
+      <Togglable buttonLabel="new blog" ref={blogFormRef}>
+        <BlogForm addBlog={addBlog} />
+      </Togglable>
+      <Blogs />
     </div>
+  );
+
+  const Users = () => (
+    <div>
+      <h2>Users</h2>
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>blogs created</th>
+          </tr>
+        </thead>
+        <tbody>
+          {users.map((user) => (
+            <tr key={user.id}>
+              <td>
+                <Link to={`/users/${user.id}`}>
+                  {user.name ? user.name : user.username}
+                </Link>
+              </td>
+              <td>{user.blogs.length}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  const User = () => {
+    const id = useParams().id;
+    const user = users.find((user) => user.id === id);
+    if (!user) return null;
+
+    return (
+      <div>
+        <h2>{user.name ? user.name : user.username}</h2>
+        <h3>added blogs</h3>
+        <ul>
+          {user.blogs.map((blog) => (
+            <li key={blog.id}>{blog.title}</li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+
+  return (
+    <Router>
+      <div>
+        <Link style={padding} to="/">home</Link>
+        <Link style={padding} to="/blogs">blogs</Link>
+        <Link style={padding} to="/users">users</Link>
+      </div>
+      <div>
+        <h2>blogs</h2>
+        <Notification />
+        {currentUser === null ? (
+          <LoginForm
+            handleLogin={handleLogin}
+            username={username}
+            setUsername={setUsername}
+            password={password}
+            setPassword={setPassword}
+          />
+        ) : (
+          <div>
+            <p>
+              {currentUser.name ? currentUser.name : currentUser.username} logged-in
+              <button onClick={handleLogout}>Logout</button>{" "}
+            </p>
+          </div>
+        )}
+      </div>
+
+      <Routes>
+        <Route path="/blogs" element={<Home />} />
+        <Route path="/blogs/:id" element={
+          <Blog addLike={addLike} removeBlog={deleteBlog}/>}
+        />
+        <Route path="/users" element={<Users />} />
+        <Route path="/users/:id" element={<User />} />
+        <Route path="/" element={<Home />} />
+      </Routes>
+    </Router>
   );
 };
 

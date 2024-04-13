@@ -1,8 +1,15 @@
 /* eslint-disable react/no-unescaped-entities */
-import { useState } from "react";
+import { useSelector } from "react-redux";
+import { useParams } from "react-router-dom";
 
-const Blog = ({ blog, currentUser, addLike, removeBlog }, refs) => {
-  const [visible, setVisible] = useState(false);
+const Blog = ({ addLike, removeBlog }) => {
+  const blogs = useSelector((state) => state.blogs);
+  const id = useParams().id;
+  const blog = blogs.find((blog) => blog.id === id);
+
+  const { currentUser } = useSelector((state) => state.users);
+
+  if (!blog) return null;
 
   // const authorized = (blog.userID.username === JSON.parse(window.localStorage.getItem('loggedBlogAppUser')).username)
   const authorized = blog.userID.username === currentUser.username;
@@ -14,10 +21,6 @@ const Blog = ({ blog, currentUser, addLike, removeBlog }, refs) => {
     border: "solid",
     borderWidth: 1,
     marginBottom: 5,
-  };
-
-  const toggleVisibility = () => {
-    setVisible(!visible);
   };
 
   const likeBlog = () => {
@@ -32,35 +35,24 @@ const Blog = ({ blog, currentUser, addLike, removeBlog }, refs) => {
 
   return (
     <div style={blogStyle} className="blog" data-testid="blog">
-      {visible ? (
-        <div>
-          <p className="title">
-            Title: "{blog.title}"
-            <button onClick={toggleVisibility}>Show Less</button>
-          </p>
-          <p className="author">Author: "{blog.author}"</p>
-          <p className="likes">
+      <h1 className="title">
+        {blog.title}
+      </h1>
+      <h2 className="author">
+        By {blog.author}
+      </h2>
+      <p className="likes">
             Likes: {blog.likes}
-            <button onClick={likeBlog}>like</button>
-          </p>
-          <p className="url">URL: "{blog.url}"</p>
-          <p className="user">
+        <button onClick={likeBlog}>like</button>
+      </p>
+      <p className="url">URL: "{blog.url}"</p>
+      <p className="user">
             Added by: "
-            {blog.userID.name ? blog.userID.name : blog.userID.username}"
-          </p>
-          <button style={showDeleteButton} onClick={confirmRemove}>
+        {blog.userID.name ? blog.userID.name : blog.userID.username}"
+      </p>
+      <button style={showDeleteButton} onClick={confirmRemove}>
             Remove
-          </button>
-        </div>
-      ) : (
-        <div>
-          <p className="title">
-            Title: "{blog.title}"
-            <button onClick={toggleVisibility}>Show More</button>
-          </p>
-          <p className="author">Author: "{blog.author}"</p>
-        </div>
-      )}
+      </button>
     </div>
   );
 };
