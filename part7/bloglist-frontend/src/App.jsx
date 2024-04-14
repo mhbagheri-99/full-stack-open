@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import {
   BrowserRouter as Router,
   Routes, Route, Link,
-  useParams
+  useParams, useNavigate,
 } from "react-router-dom";
 
 import Blog from "./components/Blog";
@@ -10,13 +10,18 @@ import Blogs from "./components/Blogs";
 import Notification from "./components/Notification";
 import LoginForm from "./components/LoginForm";
 import BlogForm from "./components/BlogForm";
+import Togglable from "./components/Togglable";
+import Navigation from "./components/Navigation";
+import Home from "./components/Home";
+import Users from "./components/Users";
+import User from "./components/User";
 import blogService from "./services/blogs";
 import loginService from "./services/login";
-import Togglable from "./components/Togglable";
+
 
 import { useSelector, useDispatch } from "react-redux";
 import { notify } from "./reducers/notificationReducer";
-import { initializeBlogs, createBlog, removeBlog, likeBlog, resetBlogs } from "./reducers/blogReducer";
+import { initializeBlogs, createBlog, removeBlog, likeBlog, resetBlogs, addComment } from "./reducers/blogReducer";
 import { initializeUsers, setCurrentUserAction } from "./reducers/userReducer";
 
 const App = () => {
@@ -29,6 +34,7 @@ const App = () => {
 
   const blogFormRef = useRef();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   // check the expired token case as well
   useEffect(() => {
@@ -79,6 +85,7 @@ const App = () => {
     }, 5));
     dispatch(setCurrentUserAction(null));
     dispatch(resetBlogs());
+    setTimeout(navigate("/"), 5000);
   };
 
   const addBlog = (blog) => {
@@ -113,101 +120,38 @@ const App = () => {
     }, 5));
   };
 
-  const padding = {
-    padding: 5
-  };
-
-  const Home = () => (
-    <div>
-      <Togglable buttonLabel="new blog" ref={blogFormRef}>
-        <BlogForm addBlog={addBlog} />
-      </Togglable>
-      <Blogs />
-    </div>
-  );
-
-  const Users = () => (
-    <div>
-      <h2>Users</h2>
-      <table>
-        <thead>
-          <tr>
-            <th></th>
-            <th>blogs created</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user) => (
-            <tr key={user.id}>
-              <td>
-                <Link to={`/users/${user.id}`}>
-                  {user.name ? user.name : user.username}
-                </Link>
-              </td>
-              <td>{user.blogs.length}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-
-  const User = () => {
-    const id = useParams().id;
-    const user = users.find((user) => user.id === id);
-    if (!user) return null;
-
-    return (
-      <div>
-        <h2>{user.name ? user.name : user.username}</h2>
-        <h3>added blogs</h3>
-        <ul>
-          {user.blogs.map((blog) => (
-            <li key={blog.id}>{blog.title}</li>
-          ))}
-        </ul>
-      </div>
-    );
+  const addNewComment = (blog, comment) => {
+    const updatedBlog = {
+      ...blog,
+      comments: blog.comments.concat(comment),
+    };
+    dispatch(addComment(blog, comment));
+    setRerender(!rerender);
+    dispatch(notify({
+      message: `Comment added to "${blog.title}" by "${blog.author}"`,
+      type: "success",
+    }, 5));
   };
 
   return (
-    <Router>
+    <div>
+      <Navigation handleLogout={handleLogout}/>
       <div>
-        <Link style={padding} to="/">home</Link>
-        <Link style={padding} to="/blogs">blogs</Link>
-        <Link style={padding} to="/users">users</Link>
-      </div>
-      <div>
-        <h2>blogs</h2>
+        <h2>Blogs App</h2>
         <Notification />
-        {currentUser === null ? (
-          <LoginForm
-            handleLogin={handleLogin}
-            username={username}
-            setUsername={setUsername}
-            password={password}
-            setPassword={setPassword}
-          />
-        ) : (
-          <div>
-            <p>
-              {currentUser.name ? currentUser.name : currentUser.username} logged-in
-              <button onClick={handleLogout}>Logout</button>{" "}
-            </p>
-          </div>
-        )}
       </div>
-
       <Routes>
-        <Route path="/blogs" element={<Home />} />
+        <Route path="/" element={
+          <Home blogFormRef={blogFormRef} addBlog={addBlog} handleLogin={handleLogin} username={username}
+            setUsername={setUsername} password={password} setPassword={setPassword}/>
+        } />
         <Route path="/blogs/:id" element={
-          <Blog addLike={addLike} removeBlog={deleteBlog}/>}
+          <Blog addLike={addLike} removeBlog={deleteBlog} addComment={addNewComment}/>}
         />
         <Route path="/users" element={<Users />} />
         <Route path="/users/:id" element={<User />} />
-        <Route path="/" element={<Home />} />
       </Routes>
-    </Router>
+    </div>
   );
 };
 

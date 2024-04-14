@@ -1,11 +1,13 @@
 /* eslint-disable react/no-unescaped-entities */
 import { useSelector } from "react-redux";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
-const Blog = ({ addLike, removeBlog }) => {
+const Blog = ({ addLike, removeBlog, addComment }) => {
   const blogs = useSelector((state) => state.blogs);
   const id = useParams().id;
   const blog = blogs.find((blog) => blog.id === id);
+
+  const navigate = useNavigate();
 
   const { currentUser } = useSelector((state) => state.users);
 
@@ -15,26 +17,31 @@ const Blog = ({ addLike, removeBlog }) => {
   const authorized = blog.userID.username === currentUser.username;
   const showDeleteButton = { display: authorized ? "" : "none" };
 
-  const blogStyle = {
-    paddingTop: 10,
-    paddingLeft: 2,
-    border: "solid",
-    borderWidth: 1,
-    marginBottom: 5,
-  };
-
   const likeBlog = () => {
     addLike(blog);
   };
 
+  const deleteBlog = (blog) => {
+    removeBlog(blog);
+    setTimeout(() => {
+      navigate("/");}, 5000);
+  };
+
   const confirmRemove = () => {
     window.confirm(`Remove blog "${blog.title}" by "${blog.author}"?`)
-      ? removeBlog(blog)
-      : console.log("cancel");
+      ? deleteBlog(blog)
+      : null;
+  };
+
+  const addNewComment = (event) => {
+    event.preventDefault();
+    const comment = event.target.comment.value;
+    event.target.comment.value = "";
+    addComment(blog, comment);
   };
 
   return (
-    <div style={blogStyle} className="blog" data-testid="blog">
+    <div className="blog" data-testid="blog">
       <h1 className="title">
         {blog.title}
       </h1>
@@ -53,6 +60,19 @@ const Blog = ({ addLike, removeBlog }) => {
       <button style={showDeleteButton} onClick={confirmRemove}>
             Remove
       </button>
+      <h2>Comments</h2>
+      <form onSubmit={addNewComment}>
+        <input type="text" name="comment" />
+        <button type="submit">Add comment</button>
+      </form>
+      {(blog.comments.length === 0) ? <p>No comments yet</p>
+        :
+        <ul>
+          {blog.comments.map((comment, index) => (
+            <li key={index}>{comment}</li>
+          ))}
+        </ul>
+      }
     </div>
   );
 };

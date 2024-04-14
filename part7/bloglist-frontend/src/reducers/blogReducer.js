@@ -11,11 +11,19 @@ const blogSlice = createSlice({
       blogToChange.likes++;
       state.sort((a, b) => b.likes - a.likes);
     },
+    comment(state, action) {
+      const id = action.payload.id;
+      const blogToChange = state.find(n => n.id === id);
+      blogToChange.comments.push(action.payload.comment);
+    },
     // appendBlogs(state, action) {
-    //   state.push(action.payload);
+    //   return state.concat(action.payload);
     // },
     setBlogs(state, action) {
       return action.payload.sort((a, b) => b.likes - a.likes);
+    },
+    getBlogs(state) {
+      return state;
     },
     resetBlogs(state) {
       return state = [];
@@ -23,7 +31,7 @@ const blogSlice = createSlice({
   }
 });
 
-export const { like, appendBlogs, setBlogs, resetBlogs } = blogSlice.actions;
+export const { like, comment, setBlogs, getBlogs, resetBlogs } = blogSlice.actions;
 
 export const initializeBlogs = () => {
   return async dispatch => {
@@ -42,6 +50,7 @@ export const removeBlog = id => {
 export const createBlog = content => {
   return async dispatch => {
     await blogServices.create(content);
+    dispatch(initializeBlogs());
   };
 };
 
@@ -55,6 +64,17 @@ export const likeBlog = id => {
     };
     await blogServices.update(blogToChange.id, updatedBlog);
     dispatch(like(id));
+  };
+};
+
+export const addComment = (blog, newComment) => {
+  return async dispatch => {
+    const updatedBlog = {
+      ...blog,
+      comments: blog.comments.concat(newComment)
+    };
+    await blogServices.addComment(blog.id, newComment);
+    dispatch(comment({ id:blog.id, comment:newComment }));
   };
 };
 
