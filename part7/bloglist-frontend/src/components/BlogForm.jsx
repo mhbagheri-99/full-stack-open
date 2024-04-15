@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Form, Button } from "react-bootstrap";
 
 const initialValues = {
   title: "",
@@ -27,10 +28,10 @@ const BlogForm = ({ addBlog }) => {
   return (
     <div className="formDiv">
       <h2>create new</h2>
-      <form onSubmit={createBlog}>
-        <div>
-          Title
-          <input
+      <Form onSubmit={createBlog}>
+        <Form.Group>
+          <Form.Label>Title:</Form.Label>
+          <Form.Control
             type="text"
             name="title"
             value={newBlog.title}
@@ -39,10 +40,10 @@ const BlogForm = ({ addBlog }) => {
             id="titleInput"
             data-testid="title"
           />
-        </div>
-        <div>
-          Author
-          <input
+        </Form.Group>
+        <Form.Group>
+          <Form.Label>Author:</Form.Label>
+          <Form.Control
             type="text"
             name="author"
             value={newBlog.author}
@@ -51,10 +52,10 @@ const BlogForm = ({ addBlog }) => {
             id="authorInput"
             data-testid="author"
           />
-        </div>
-        <div>
-          URL
-          <input
+        </Form.Group>
+        <Form.Group>
+          <Form.Label>URL:</Form.Label>
+          <Form.Control
             type="text"
             name="url"
             value={newBlog.url}
@@ -63,9 +64,9 @@ const BlogForm = ({ addBlog }) => {
             id="urlInput"
             data-testid="url"
           />
-        </div>
-        <button type="submit">save</button>
-      </form>
+        </Form.Group>
+        <Button variant="primary" type="submit">save</Button>
+      </Form>
     </div>
   );
 };

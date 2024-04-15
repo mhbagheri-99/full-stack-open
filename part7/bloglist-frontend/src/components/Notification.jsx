@@ -1,4 +1,5 @@
 import { useSelector } from "react-redux";
+import { Alert } from "react-bootstrap";
 
 const Notification = () => {
   const notification = useSelector((state) => state.notification);
@@ -6,44 +7,42 @@ const Notification = () => {
   const message = notification.message;
   const type = notification.type;
 
-  const style = {
-    background: "lightgrey",
-    fontSize: 20,
-    borderStyle: "solid",
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
-  };
+  // const style = {
+  //   background: "lightgrey",
+  //   fontSize: 20,
+  //   borderStyle: "solid",
+  //   borderRadius: 5,
+  //   padding: 10,
+  //   marginBottom: 10,
+  // };
 
   if (message === "" || message === null) {
-    style.display = "none";
+    //style.display = "none";
     return (
-      <div style={style}>
-        {notification.message}
-      </div>
+      null
     );
   } else {
     if (type === "success") {
-      const success = {
-        ...style,
-        display: "block",
-        color: "green",
-      };
+      // const success = {
+      //   ...style,
+      //   display: "block",
+      //   color: "green",
+      // };
       return (
-        <div className="notif" style={success}>
+        <Alert className="notif" variant="success">
           {message}
-        </div>
+        </Alert>
       );
     } else if (type === "error"){
-      const error = {
-        ...style,
-        display: "block",
-        color: "red",
-      };
+      // const error = {
+      //   ...style,
+      //   display: "block",
+      //   color: "red",
+      // };
       return (
-        <div className="notif" style={error}>
+        <Alert className="notif" variant="danger">
           {message}
-        </div>
+        </Alert>
       );
     }
   }

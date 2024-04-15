@@ -134,10 +134,10 @@ const App = () => {
   };
 
   return (
-    <div>
+    <div className="container">
       <Navigation handleLogout={handleLogout}/>
       <div>
-        <h2>Blogs App</h2>
+        <h1>Blogs App</h1>
         <Notification />
       </div>
       <Routes>

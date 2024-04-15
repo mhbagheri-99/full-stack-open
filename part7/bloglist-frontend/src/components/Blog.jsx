@@ -1,6 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 import { useSelector } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
+import { Table, Form, Button } from "react-bootstrap";
 
 const Blog = ({ addLike, removeBlog, addComment }) => {
   const blogs = useSelector((state) => state.blogs);
@@ -50,28 +51,36 @@ const Blog = ({ addLike, removeBlog, addComment }) => {
       </h2>
       <p className="likes">
             Likes: {blog.likes}
-        <button onClick={likeBlog}>like</button>
+        <Button variant="secondary" onClick={likeBlog}>like</Button>
       </p>
-      <p className="url">URL: "{blog.url}"</p>
+      <p className="url"> URL: <a className="url"> {blog.url} </a> </p>
       <p className="user">
             Added by: "
         {blog.userID.name ? blog.userID.name : blog.userID.username}"
       </p>
-      <button style={showDeleteButton} onClick={confirmRemove}>
+      <Button variant="secondary" style={showDeleteButton} onClick={confirmRemove}>
             Remove
-      </button>
+      </Button>
       <h2>Comments</h2>
-      <form onSubmit={addNewComment}>
-        <input type="text" name="comment" />
-        <button type="submit">Add comment</button>
-      </form>
+      <Form onSubmit={addNewComment}>
+        <Form.Group>
+          <Form.Control type="text" name="comment" />
+          <Button variant="primary" type="submit">Add comment</Button>
+        </Form.Group>
+      </Form>
       {(blog.comments.length === 0) ? <p>No comments yet</p>
         :
-        <ul>
-          {blog.comments.map((comment, index) => (
-            <li key={index}>{comment}</li>
-          ))}
-        </ul>
+        <Table striped>
+          <tbody>
+            {blog.comments.map((comment, index) => (
+              <tr key={index}>
+                <td>
+                  {comment}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
       }
     </div>
   );
